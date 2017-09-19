@@ -4,6 +4,7 @@ import ca.ubc.cs317.dict.exception.DictConnectionException;
 import ca.ubc.cs317.dict.model.Database;
 import ca.ubc.cs317.dict.model.Definition;
 import ca.ubc.cs317.dict.model.MatchingStrategy;
+import ca.ubc.cs317.dict.util.DictStringParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -65,6 +66,12 @@ public class DictionaryConnection {
     public synchronized void close() {
 
         // TODO Add your code here
+        output.println("QUIT");
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /** Requests and retrieves all definitions for a specific word.
@@ -114,6 +121,28 @@ public class DictionaryConnection {
     public synchronized Collection<Database> getDatabaseList() throws DictConnectionException {
 
         if (!databaseMap.isEmpty()) return databaseMap.values();
+
+        // Send request for list of databases
+        output.println("SHOW DATABASES");
+
+        // Ensure valid output
+        Status.readStatus(input);
+        // TODO case handling for different return codes
+
+        // read all the lines for the good case
+        try {
+            String nextDatabase = input.readLine();
+            while (!nextDatabase.equals(".")) {
+                // parse line and put into databaseMap
+                String[] parsedDatabase = DictStringParser.splitAtoms(nextDatabase);
+                String parsedDatabaseName = parsedDatabase[0];
+                String parsedDatabaseDescription = parsedDatabase[1];
+                databaseMap.put(parsedDatabaseName, new Database(parsedDatabaseName,parsedDatabaseDescription));
+                nextDatabase = input.readLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // TODO Add your code here
 

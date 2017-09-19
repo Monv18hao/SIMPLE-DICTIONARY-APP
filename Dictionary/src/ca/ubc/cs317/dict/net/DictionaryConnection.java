@@ -36,9 +36,9 @@ public class DictionaryConnection {
     public DictionaryConnection(String host, int port) throws DictConnectionException {
         // TODO Add your code here
         try {
-            Socket socket = new Socket(host, port);
-            PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader input = new BufferedReader(
+            socket = new Socket(host, port);
+            output = new PrintWriter(socket.getOutputStream(), true);
+            input = new BufferedReader(
                     new InputStreamReader(socket.getInputStream())
             );
             Status.readStatus(input);

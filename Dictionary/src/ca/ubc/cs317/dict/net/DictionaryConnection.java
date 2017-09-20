@@ -126,8 +126,10 @@ public class DictionaryConnection {
         output.println("SHOW DATABASES");
 
         // Ensure valid output
-        Status.readStatus(input);
-        // TODO case handling for different return codes
+        int[] validStatusCodes = {110};
+        validateStatusCodes(validStatusCodes);
+
+        // TODO case handling for 554 return code
 
         // read all the lines for the good case
         try {
@@ -140,8 +142,13 @@ public class DictionaryConnection {
                 databaseMap.put(parsedDatabaseName, new Database(parsedDatabaseName,parsedDatabaseDescription));
                 nextDatabase = input.readLine();
             }
+
+            //confirm final line is status code 250:
+            int[] finalCode = {250};
+            validateStatusCodes(finalCode);
+
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new DictConnectionException();
         }
 
         // TODO Add your code here
@@ -159,7 +166,50 @@ public class DictionaryConnection {
 
         // TODO Add your code here
 
+        // Send request for list of databases
+        output.println("SHOW STRAT");
+
+        // Ensure valid output
+        int[] validStatusCodes = {111};
+        validateStatusCodes(validStatusCodes);
+
+        // TODO case handling 555 return code
+
+        // read all the lines for the good case
+        try {
+            String nextStrategy = input.readLine();
+            while (!nextStrategy.equals(".")) {
+                // parse line and put into databaseMap
+                String[] parsedStrategy = DictStringParser.splitAtoms(nextStrategy);
+                String parsedStrategyName = parsedStrategy[0];
+                String parsedStrategyDescription = parsedStrategy[1];
+                set.add(new MatchingStrategy(parsedStrategyName, parsedStrategyDescription));
+                nextStrategy = input.readLine();
+            }
+
+            //confirm final line is status code 250:
+            int[] finalCode = {250};
+            validateStatusCodes(finalCode);
+
+        } catch (IOException e) {
+            throw new DictConnectionException();
+        }
         return set;
     }
 
+    private void validateStatusCodes(int[] validStatusCodes) throws DictConnectionException {
+        Status status = Status.readStatus(input);
+        int parsedStatus = status.getStatusCode();
+        boolean validStatus = false;
+        for (int statusCode : validStatusCodes) {
+            if (statusCode == parsedStatus) {
+                validStatus = true;
+                System.out.println("Returned status code: " + parsedStatus + " matches expected SC: " + statusCode);
+                break;
+            }
+        }
+        if (validStatus == false) {
+            throw new DictConnectionException();
+        }
+    }
 }

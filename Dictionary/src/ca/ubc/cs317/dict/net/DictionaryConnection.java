@@ -7,8 +7,8 @@ import ca.ubc.cs317.dict.model.MatchingStrategy;
 import ca.ubc.cs317.dict.util.DictStringParser;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.*;
@@ -156,11 +156,11 @@ public class DictionaryConnection {
      */
     public synchronized Collection<Database> getDatabaseList() throws DictConnectionException {
 
+
         // Ensure valid output
-        // TODO case handling for different return codes
+        // TODO Clean Up
         // StatusCode: 110 n databases present - text follows
         // StatusCode: 554 No databases present
-
 
         if (!databaseMap.isEmpty()) {
             return databaseMap.values();
@@ -201,7 +201,6 @@ public class DictionaryConnection {
         } catch (IOException e) {
             throw new DictConnectionException();
         }
-
         return databaseMap.values();
     }
 
@@ -246,7 +245,6 @@ public class DictionaryConnection {
         } catch (IOException e) {
             throw new DictConnectionException();
         }
-
         return set;
     }
 

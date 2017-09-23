@@ -6,6 +6,7 @@ import ca.ubc.cs317.dict.model.Definition;
 import ca.ubc.cs317.dict.model.MatchingStrategy;
 import ca.ubc.cs317.dict.util.DictStringParser;
 
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,6 +26,18 @@ public class DictionaryConnection {
     private PrintWriter output;
 
     private Map<String, Database> databaseMap = new LinkedHashMap<String, Database>();
+
+
+    /*  TODO: Implement following cases:
+
+             500 Syntax error, command not recognized
+             501 Syntax error, illegal parameters
+             502 Command not implemented
+             503 Command parameter not implemented
+             420 Server temporarily unavailable
+             421 Server shutting down at operator request
+
+     */
 
     /** Establishes a new connection with a DICT server using an explicit host and port number, and handles initial
      * welcome messages.
@@ -121,6 +134,48 @@ public class DictionaryConnection {
         // TODO 151 word database name - text follows
         // TODO 250 ok (optional timing information here)
 
+        try {
+            // Send Request
+            String databaseName = database.getName();
+            output.println("DEFINE" + " " + databaseName + " " + word);
+
+
+            // Check connection code
+            Status status = Status.readStatus(input);
+            int parsedStatus = status.getStatusCode();
+
+            if (parsedStatus == 550) {
+                throw new DictConnectionException("Invalid database, use \"SHOW DB\" for list of databases");
+            } else if (parsedStatus == 552) {
+                throw new DictConnectionException("No match");
+            } else if (parsedStatus == 150) {
+                String n = input.readLine();
+                if (n.equals(0)) return set;
+            } else if (parsedStatus == 151) {
+                String nextWord = input.readLine();
+                while (!nextWord.equals(".")) {
+                    String[] parsedWords = DictStringParser.splitAtoms(nextWord);
+                    String parsedWord = parsedWords[0];
+                    String parsedDatabase = parsedWords[1];
+                    String parsedDatabaseDef = parsedWords[2];
+                    String parsedDef = parsedWords[3];
+                    Database db = new Database(parsedDatabase, parsedDatabaseDef);
+                    Definition def = new Definition(parsedWord, db);
+                    def.setDefinition(parsedDef);
+                    set.add(def);
+                }
+                Status endStatus = Status.readStatus(input);
+                int endStatusCode = endStatus.getStatusCode();
+                if (endStatusCode != 250) {
+                    throw new DictConnectionException("Incomplete DefinitionList retrieval");
+                }
+            } else {
+                //throw new DictConnectionException("Invalid Code - Definition");
+            }
+        } catch(IOException e){
+            throw new DictConnectionException();
+        }
+
         return set;
     }
 
@@ -137,13 +192,51 @@ public class DictionaryConnection {
     public synchronized Set<String> getMatchList(String word, MatchingStrategy strategy, Database database) throws DictConnectionException {
         Set<String> set = new LinkedHashSet<>();
 
-        // TODO Add your code here
         // TODO 550 Invalid database, use "SHOW DB" for list of databases
         // TODO 551 Invalid strategy, use "SHOW STRAT" for a list of strategies
         // TODO 552 No match
         // TODO 152 n matches found - text follows
         // TODO 250 ok (optional timing information here)
 
+        try {
+            String strategyName = strategy.getName();
+            String databaseName = database.getName();
+            // Send Request
+            output.println("MATCH" + " " + databaseName + " " + strategyName + " " + word);
+            // Check connection code
+            Status status = Status.readStatus(input);
+            int parsedStatus = status.getStatusCode();
+
+            if (parsedStatus == 550) {
+                throw new DictConnectionException("Invalid database, use \"SHOW DB\" for list of databases");
+            }
+            else if (parsedStatus == 551) {
+                throw new DictConnectionException("Invalid strategy, use \"SHOW STRAT\" for a list of strategies");
+            }
+            else if (parsedStatus == 552) {
+                throw new DictConnectionException("No match");
+            }
+            else if (parsedStatus == 152) {
+                String nextMatch = input.readLine();
+                while (!nextMatch.equals(".")) {
+                    // parse line and put into databaseMap
+                    String[] parsedMatch = DictStringParser.splitAtoms(nextMatch);
+                    //String parsedMatchDatabase = parsedMatch[0];
+                    String parsedMatchWord = parsedMatch[1];
+                    set.add(parsedMatchWord);
+                }
+                Status endStatus = Status.readStatus(input);
+                int endStatusCode = endStatus.getStatusCode();
+
+                if (endStatusCode != 250) {
+                    throw new DictConnectionException("Incomplete MatchList retrieval");
+                }
+            } else {
+                throw new DictConnectionException("Invalid Code - Matches");
+            }
+        } catch (IOException e) {
+            throw new DictConnectionException();
+        }
         return set;
     }
 
@@ -166,14 +259,14 @@ public class DictionaryConnection {
             return databaseMap.values();
         }
 
-        // Send request for list of databases
-        output.println("SHOW DATABASES");
-
-        // Check connection code.
-        Status status = Status.readStatus(input);
-        int parsedStatus = status.getStatusCode();
-        System.out.println(parsedStatus);
         try {
+            // Send request for list of databases
+            output.println("SHOW DATABASES");
+
+            // Check connection code
+            Status status = Status.readStatus(input);
+            int parsedStatus = status.getStatusCode();
+
             if (parsedStatus == 554) {
                 return databaseMap.values();
             }
@@ -212,15 +305,14 @@ public class DictionaryConnection {
     public synchronized Set<MatchingStrategy> getStrategyList() throws DictConnectionException {
         Set<MatchingStrategy> set = new LinkedHashSet<>();
 
-        // Send request for list of databases
-        output.println("SHOW STRAT");
-
-        // Check connection code.
-        Status status = Status.readStatus(input);
-        int parsedStatus = status.getStatusCode();
-
-            // read all the lines for the good case
         try {
+            // Send request for list of databases
+            output.println("SHOW STRAT");
+
+            // Check connection code.
+            Status status = Status.readStatus(input);
+            int parsedStatus = status.getStatusCode();
+
             if (parsedStatus == 555) {
                 return set;
             } else if (parsedStatus == 111) {

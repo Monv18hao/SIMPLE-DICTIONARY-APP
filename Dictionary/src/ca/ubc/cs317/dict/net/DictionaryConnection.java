@@ -133,7 +133,9 @@ public class DictionaryConnection {
         // TODO 150 n definitions retrieved - definitions follow
         // TODO 151 word database name - text follows
         // TODO 250 ok (optional timing information here)
-
+        if (word.isEmpty() || word.equals("")) {
+            return set;
+        }
         try {
             // Send Request
             String databaseName = database.getName();
@@ -206,48 +208,49 @@ public class DictionaryConnection {
         // TODO 250 ok (optional timing information here)
 
         // make sure there's actual input
-//        if (word.isEmpty()) {
-//            return set;
-//        }
-//        try {
-//            String strategyName = strategy.getName();
-//            String databaseName = database.getName();
-//            // Send Request
-//            output.println("MATCH" + " " + databaseName + " " + strategyName + " " + word);
-//            // Check connection code
-//            Status status = Status.readStatus(input);
-//            int parsedStatus = status.getStatusCode();
-//
-//            if (parsedStatus == 550) {
-//                throw new DictConnectionException("Invalid database, use \"SHOW DB\" for list of databases");
-//            }
-//            else if (parsedStatus == 551) {
-//                throw new DictConnectionException("Invalid strategy, use \"SHOW STRAT\" for a list of strategies");
-//            }
-//            else if (parsedStatus == 552) {
-//                throw new DictConnectionException("No match");
-//            }
-//            else if (parsedStatus == 152) {
-//                String nextMatch = input.readLine();
-//                while (!nextMatch.equals(".")) {
-//                    // parse line and put into databaseMap
-//                    String[] parsedMatch = DictStringParser.splitAtoms(nextMatch);
-//                    //String parsedMatchDatabase = parsedMatch[0];
-//                    String parsedMatchWord = parsedMatch[1];
-//                    set.add(parsedMatchWord);
-//                }
-//                Status endStatus = Status.readStatus(input);
-//                int endStatusCode = endStatus.getStatusCode();
-//
-//                if (endStatusCode != 250) {
-//                    throw new DictConnectionException("Incomplete MatchList retrieval");
-//                }
-//            } else {
-//                throw new DictConnectionException("Invalid Code - Matches");
-//            }
-//        } catch (IOException e) {
-//            throw new DictConnectionException();
-//        }
+        if (word.isEmpty()) {
+            return set;
+        }
+        try {
+            String strategyName = strategy.getName();
+            String databaseName = database.getName();
+            // Send Request
+            output.println("MATCH " + databaseName + " " + strategyName + " \"" + word + "\"");
+            // Check connection code
+            Status status = Status.readStatus(input);
+            int parsedStatus = status.getStatusCode();
+
+            if (parsedStatus == 550) {
+                throw new DictConnectionException("Invalid database, use \"SHOW DB\" for list of databases");
+            }
+            else if (parsedStatus == 551) {
+                throw new DictConnectionException("Invalid strategy, use \"SHOW STRAT\" for a list of strategies");
+            }
+            else if (parsedStatus == 552) {
+                throw new DictConnectionException("No match");
+            }
+            else if (parsedStatus == 152) {
+                String nextMatch = input.readLine();
+                while (!nextMatch.equals(".")) {
+                    // parse line and put into databaseMap
+                    String[] parsedMatch = DictStringParser.splitAtoms(nextMatch);
+                    //String parsedMatchDatabase = parsedMatch[0];
+                    String parsedMatchWord = parsedMatch[1];
+                    set.add(parsedMatchWord);
+                    nextMatch = input.readLine();
+                }
+                Status endStatus = Status.readStatus(input);
+                int endStatusCode = endStatus.getStatusCode();
+
+                if (endStatusCode != 250) {
+                    throw new DictConnectionException("Incomplete MatchList retrieval");
+                }
+            } else {
+                throw new DictConnectionException("Invalid Code - Matches");
+            }
+        } catch (IOException e) {
+            throw new DictConnectionException();
+        }
         return set;
     }
 
@@ -340,7 +343,7 @@ public class DictionaryConnection {
 
                 Status endStatus = Status.readStatus(input);
                 int endStatusCode = endStatus.getStatusCode();
-                System.out.print("End parsed status: " + endStatusCode);
+                System.out.println("End parsed status: " + endStatusCode);
                 if (endStatusCode != 250) {
                     throw new DictConnectionException("Incomplete Strat retrieval");
                 }

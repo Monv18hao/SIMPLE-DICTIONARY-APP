@@ -163,7 +163,7 @@ public class DictionaryConnection {
                     while (!definition.equals(".")) {
                         System.out.println("Definition start: " + definition);
                         if (definition.startsWith(" ")) {
-                            entireDefinition = entireDefinition + " " + definition.trim();
+                            entireDefinition = entireDefinition + "\r\n" + definition;
                         }
                         definition = input.readLine();
                     }

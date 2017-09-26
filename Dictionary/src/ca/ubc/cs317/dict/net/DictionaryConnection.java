@@ -159,19 +159,17 @@ public class DictionaryConnection {
                     String parsedDatabase = parsedSummary[2];
 
                     String definition = input.readLine();
-                    String entireDefinition = "";
+                    Database mappedDb = databaseMap.get(parsedDatabase);
+                    Definition def = new Definition(parsedWord, mappedDb);
                     while (!definition.equals(".")) {
                         System.out.println("Definition start: " + definition);
                         if (definition.startsWith(" ")) {
-                            entireDefinition = entireDefinition + "\r\n" + definition;
+                            def.appendDefinition(definition);
                         }
                         definition = input.readLine();
                     }
-                    Database mappedDb = databaseMap.get(parsedDatabase);
-                    Definition def = new Definition(parsedWord, mappedDb);
-                    def.setDefinition(entireDefinition.trim());
                     set.add(def);
-                    System.out.println("Definition: " + entireDefinition);
+                    System.out.println("Definition: " + def.getDefinition());
                     nextDefinition = input.readLine();
                     parsedSummary = DictStringParser.splitAtoms(nextDefinition);
                 }

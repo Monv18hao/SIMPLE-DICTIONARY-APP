@@ -149,7 +149,7 @@ public class DictionaryConnection {
             if (parsedStatus == 550) {
                 throw new DictConnectionException("Invalid database, use \"SHOW DB\" for list of databases");
             } else if (parsedStatus == 552) {
-                throw new DictConnectionException("No match");
+                return set;
             } else if (parsedStatus == 150) {
                 System.out.println(status.getDetails());
                 String nextDefinition = input.readLine();
@@ -225,7 +225,7 @@ public class DictionaryConnection {
                 throw new DictConnectionException("Invalid strategy, use \"SHOW STRAT\" for a list of strategies");
             }
             else if (parsedStatus == 552) {
-                throw new DictConnectionException("No match");
+                return set;
             }
             else if (parsedStatus == 152) {
                 String nextMatch = input.readLine();

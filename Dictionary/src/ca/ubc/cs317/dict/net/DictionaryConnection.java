@@ -139,7 +139,7 @@ public class DictionaryConnection {
         try {
             // Send Request
             String databaseName = database.getName();
-            output.println("DEFINE" + " " + databaseName + " " + word);
+            output.println("DEFINE" + " " + databaseName + " \"" + word + "\"");
 
 
             // Check connection code

@@ -26,9 +26,7 @@ public class DictionaryConnection {
     private PrintWriter output;
 
     private Map<String, Database> databaseMap = new LinkedHashMap<String, Database>();
-
-
-
+    
     /** Establishes a new connection with a DICT server using an explicit host and port number, and handles initial
      * welcome messages.
      *
@@ -39,17 +37,16 @@ public class DictionaryConnection {
      */
 
     public DictionaryConnection(String host, int port) throws DictConnectionException {
-        // clientSocket: our client socket
+        // socket: our client socket
         // output: output stream
         // input: input stream
-        // check status code 220,530,420,421
 
         try {
             socket = new Socket(host, port);
             output = new PrintWriter(socket.getOutputStream(), true);
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // set read timeout
+            // Set read timeout
             socket.setSoTimeout(2500);
 
             // Set variables for returned status codes
@@ -88,11 +85,10 @@ public class DictionaryConnection {
      *
      */
     public synchronized void close() {
-        // close the output stream
-        // close the input stream
-        // close the socket
+        // Close the output stream
+        // Close the input stream
+        // Close the socket
         output.println("QUIT");
-        //
         try {
             input.close();
             output.close();
@@ -115,7 +111,7 @@ public class DictionaryConnection {
         Collection<Definition> set = new ArrayList<>();
         getDatabaseList(); // Ensure the list of databases has been populated
 
-        // simply return if no word entry
+        // Simply return if no word entry
         if (word.isEmpty()) return set;
 
         // Set variables for returned status codes
@@ -143,7 +139,7 @@ public class DictionaryConnection {
                 String nextDefinition = input.readLine();
                 String [] splitDefinition = DictStringParser.splitAtoms(nextDefinition);
 
-                //new definition line in form: definitionStart "returnedWord" returnedDb
+                //New definition line in form: definitionStart "returnedWord" returnedDb
                 while (splitDefinition[0].equals(Integer.toString(definitionStart))) {
                     String returnedWord = splitDefinition[1];
                     String returnedDb = splitDefinition[2];
@@ -198,7 +194,7 @@ public class DictionaryConnection {
         int invalidStrat = 551;
 
 
-        // simply return if no word entry
+        // Simply return if no word entry
         if (word.isEmpty()) return set;
 
         try {
@@ -215,7 +211,7 @@ public class DictionaryConnection {
             if (statusCode == noMatch) {
                 return set;
             } else if (statusCode == success) {
-                // parse each returned match, put into set
+                // Parse each returned match, put into set
                 String nextMatch = input.readLine();
                 while (!nextMatch.equals(".")) {
                     // Lines in the form: dictName "matchWord"
@@ -341,11 +337,22 @@ public class DictionaryConnection {
         return set;
     }
 
+    /** Retrieves current status code
+     *
+     * @return The current status code
+     * @throws DictConnectionException If the connection was interrupted or the messages don't match their expected value.
+     */
     private int getReturnStatus() throws DictConnectionException {
         Status status = Status.readStatus(input);
         return status.getStatusCode();
     }
 
+    /** Validates current status code with a list of possible general status responses
+     *
+     * @param currentStatusCode The current status code
+     * @throws DictConnectionException If the connection was interrupted or the messages don't match their expected value.
+     * Corresponding messages are given for each status code.
+     */
     private void validateGeneralStatus(int currentStatusCode) throws DictConnectionException {
         int commandNotRec = 500;
         int illegalParam = 501;

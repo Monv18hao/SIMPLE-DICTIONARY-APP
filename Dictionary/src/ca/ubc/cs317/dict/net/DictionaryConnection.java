@@ -54,33 +54,17 @@ public class DictionaryConnection {
 
             // Set variables for returned status codes
             int success = 220;
-            int tempUnavailable = 420;
-            int shutDown = 421;
             int denied = 530;
-            int commandNotRec = 500;
-            int illegalParam = 501;
-            int commandNotImpl = 502;
-            int paramNotImpl = 503;
 
             // Check status code:
             int statusCode = getReturnStatus();
 
+            validateGeneralStatus(statusCode);
+
             if (statusCode == success) {
                 return;
-            } else if (statusCode == tempUnavailable) {
-                throw new DictConnectionException("Server temporarily unavailable");
-            } else if (statusCode ==  shutDown) {
-                throw new DictConnectionException("Server shutting down at operator request");
             } else if (statusCode == denied) {
                 throw new DictConnectionException("Access denied");
-            } else if (statusCode == commandNotRec) {
-                throw new DictConnectionException("Syntax error, command not recognized");
-            } else if (statusCode == illegalParam) {
-                throw new DictConnectionException("Syntax error, illegal parameters");
-            } else if (statusCode == commandNotImpl) {
-                throw new DictConnectionException("Command not implemented");
-            } else if (statusCode == paramNotImpl) {
-                throw new DictConnectionException("Command parameter not implemented");
             }
 
         } catch (IOException e) {
@@ -140,12 +124,6 @@ public class DictionaryConnection {
         int definitionStart = 151;
         int terminate = 250;
         int invalidDb = 550;
-        int commandNotRec = 500;
-        int illegalParam = 501;
-        int commandNotImpl = 502;
-        int paramNotImpl = 503;
-        int tempUnavailable = 420;
-        int shutDown = 421;
 
         try {
             // Send Request for definitions
@@ -157,19 +135,11 @@ public class DictionaryConnection {
 
             if (statusCode == noMatch) {
                 return set;
-            } else if (statusCode == tempUnavailable) {
-                throw new DictConnectionException("Server temporarily unavailable");
-            } else if (statusCode ==  shutDown) {
-                throw new DictConnectionException("Server shutting down at operator request");
-            } else if (statusCode == commandNotRec) {
-                throw new DictConnectionException("Syntax error, command not recognized");
-            } else if (statusCode == illegalParam) {
-                throw new DictConnectionException("Syntax error, illegal parameters");
-            } else if (statusCode == commandNotImpl) {
-                throw new DictConnectionException("Command not implemented");
-            } else if (statusCode == paramNotImpl) {
-                throw new DictConnectionException("Command parameter not implemented");
-            } else if (statusCode == success) {
+            }
+
+            validateGeneralStatus(statusCode);
+
+            if (statusCode == success) {
                 String nextDefinition = input.readLine();
                 String [] splitDefinition = DictStringParser.splitAtoms(nextDefinition);
 
@@ -226,12 +196,6 @@ public class DictionaryConnection {
         int terminate = 250;
         int invalidDb = 550;
         int invalidStrat = 551;
-        int commandNotRec = 500;
-        int illegalParam = 501;
-        int commandNotImpl = 502;
-        int paramNotImpl = 503;
-        int tempUnavailable = 420;
-        int shutDown = 421;
 
 
         // simply return if no word entry
@@ -246,20 +210,10 @@ public class DictionaryConnection {
             // Check connection status code
             int statusCode = getReturnStatus();
 
+            validateGeneralStatus(statusCode);
+
             if (statusCode == noMatch) {
                 return set;
-            } else if (statusCode == tempUnavailable) {
-                throw new DictConnectionException("Server temporarily unavailable");
-            } else if (statusCode ==  shutDown) {
-                throw new DictConnectionException("Server shutting down at operator request");
-            } else if (statusCode == commandNotRec) {
-                throw new DictConnectionException("Syntax error, command not recognized");
-            } else if (statusCode == illegalParam) {
-                throw new DictConnectionException("Syntax error, illegal parameters");
-            } else if (statusCode == commandNotImpl) {
-                throw new DictConnectionException("Command not implemented");
-            } else if (statusCode == paramNotImpl) {
-                throw new DictConnectionException("Command parameter not implemented");
             } else if (statusCode == success) {
                 // parse each returned match, put into set
                 String nextMatch = input.readLine();
@@ -304,12 +258,6 @@ public class DictionaryConnection {
         int noMatch = 554;
         int success = 110;
         int terminate = 250;
-        int commandNotRec = 500;
-        int illegalParam = 501;
-        int commandNotImpl = 502;
-        int paramNotImpl = 503;
-        int tempUnavailable = 420;
-        int shutDown = 421;
 
         try {
             // Send request for list of databases
@@ -318,20 +266,10 @@ public class DictionaryConnection {
             // Check connection code
             int statusCode = getReturnStatus();
 
+            validateGeneralStatus(statusCode);
+
             if (statusCode == noMatch) {
                 return databaseMap.values();
-            } else if (statusCode == tempUnavailable) {
-                throw new DictConnectionException("Server temporarily unavailable");
-            } else if (statusCode ==  shutDown) {
-                throw new DictConnectionException("Server shutting down at operator request");
-            } else if (statusCode == commandNotRec) {
-                throw new DictConnectionException("Syntax error, command not recognized");
-            } else if (statusCode == illegalParam) {
-                throw new DictConnectionException("Syntax error, illegal parameters");
-            } else if (statusCode == commandNotImpl) {
-                throw new DictConnectionException("Command not implemented");
-            } else if (statusCode == paramNotImpl) {
-                throw new DictConnectionException("Command parameter not implemented");
             } else if (statusCode == success) {
                 // Parse each returned database, put into databaseMap
                 String nextLine = input.readLine();
@@ -367,12 +305,6 @@ public class DictionaryConnection {
         int noMatch = 555;
         int success = 111;
         int terminate = 250;
-        int commandNotRec = 500;
-        int illegalParam = 501;
-        int commandNotImpl = 502;
-        int paramNotImpl = 503;
-        int tempUnavailable = 420;
-        int shutDown = 421;
 
         try {
             // Send request for list of strategies
@@ -381,20 +313,10 @@ public class DictionaryConnection {
             // Check connection status code
             int statusCode = getReturnStatus();
 
+            validateGeneralStatus(statusCode);
+
             if (statusCode == noMatch) {
                 return set;
-            } else if (statusCode == tempUnavailable) {
-                throw new DictConnectionException("Server temporarily unavailable");
-            } else if (statusCode ==  shutDown) {
-                throw new DictConnectionException("Server shutting down at operator request");
-            } else if (statusCode == commandNotRec) {
-                throw new DictConnectionException("Syntax error, command not recognized");
-            } else if (statusCode == illegalParam) {
-                throw new DictConnectionException("Syntax error, illegal parameters");
-            } else if (statusCode == commandNotImpl) {
-                throw new DictConnectionException("Command not implemented");
-            } else if (statusCode == paramNotImpl) {
-                throw new DictConnectionException("Command parameter not implemented");
             } else if (statusCode == success) {
                 // Parse each returned strategy, create MatchingStrategy object, add in set
                 String nextLine = input.readLine();
@@ -422,5 +344,29 @@ public class DictionaryConnection {
     private int getReturnStatus() throws DictConnectionException {
         Status status = Status.readStatus(input);
         return status.getStatusCode();
+    }
+
+    private void validateGeneralStatus(int currentStatusCode) throws DictConnectionException {
+        int commandNotRec = 500;
+        int illegalParam = 501;
+        int commandNotImpl = 502;
+        int paramNotImpl = 503;
+        int tempUnavailable = 420;
+        int shutDown = 421;
+
+        if (currentStatusCode == tempUnavailable) {
+            throw new DictConnectionException("Server temporarily unavailable");
+        } else if (currentStatusCode ==  shutDown) {
+            throw new DictConnectionException("Server shutting down at operator request");
+        } else if (currentStatusCode == commandNotRec) {
+            throw new DictConnectionException("Syntax error, command not recognized");
+        } else if (currentStatusCode == illegalParam) {
+            throw new DictConnectionException("Syntax error, illegal parameters");
+        } else if (currentStatusCode == commandNotImpl) {
+            throw new DictConnectionException("Command not implemented");
+        } else if (currentStatusCode == paramNotImpl) {
+            throw new DictConnectionException("Command parameter not implemented");
+        }
+
     }
 }

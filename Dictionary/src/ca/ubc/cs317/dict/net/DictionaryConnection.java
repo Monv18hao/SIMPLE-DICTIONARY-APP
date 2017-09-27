@@ -28,16 +28,6 @@ public class DictionaryConnection {
     private Map<String, Database> databaseMap = new LinkedHashMap<String, Database>();
 
 
-    /*  TODO: Implement following cases:
-
-             500 Syntax error, command not recognized
-             501 Syntax error, illegal parameters
-             502 Command not implemented
-             503 Command parameter not implemented
-             420 Server temporarily unavailable
-             421 Server shutting down at operator request
-
-     */
 
     /** Establishes a new connection with a DICT server using an explicit host and port number, and handles initial
      * welcome messages.
@@ -63,22 +53,27 @@ public class DictionaryConnection {
             // set read timeout
             socket.setSoTimeout(2500);
 
-            // Check status code:
-            Status status = Status.readStatus(input);
-            int parsedStatus = status.getStatusCode();
+            // Set variables for returned status codes
+            int success = 220;
+            int tempUnavailable = 420;
+            int shutDown = 421;
+            int denied = 530;
 
-            if (parsedStatus == 220) {
+            // Check status code:
+            int statusCode = getReturnStatus();
+
+            if (statusCode == success) {
                 System.out.print("OK");
-            } else if (parsedStatus == 420) {
+            } else if (statusCode == tempUnavailable) {
                 throw new DictConnectionException("Server temporarily unavailable");
-            } else if (parsedStatus ==  421) {
+            } else if (statusCode ==  shutDown) {
                 throw new DictConnectionException("Server shutting down at operator request");
-            } else if (parsedStatus == 530) {
+            } else if (statusCode == denied) {
                 throw new DictConnectionException("Access denied");
             }
 
         } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to:" + host);
+            System.err.println("Couldn't get I/O for the connection to:" + host + ":" + port);
         }
     }
 
@@ -102,15 +97,12 @@ public class DictionaryConnection {
         // close the input stream
         // close the socket
         output.println("QUIT");
-
         //
         try {
             input.close();
             output.close();
             socket.close();
-
         } catch (IOException e) {
-
         }
     }
 
@@ -128,6 +120,9 @@ public class DictionaryConnection {
         Collection<Definition> set = new ArrayList<>();
         getDatabaseList(); // Ensure the list of databases has been populated
 
+        // simply return if no word entry
+        if (word.isEmpty()) return set;
+
         // Set variables for returned status codes
         int invalidDb = 550;
         int noMatch = 552;
@@ -135,25 +130,19 @@ public class DictionaryConnection {
         int definitionStart = 151;
         int terminate = 250;
 
-        if (word.isEmpty() || word.equals("") || word == null) {
-            return set;
-        }
-
         try {
             // Send Request for definitions
             String databaseName = database.getName();
             output.println("DEFINE" + " " + databaseName + " \"" + word + "\"");
 
             // Check connection status code
-            Status status = Status.readStatus(input);
-            int statusCode = status.getStatusCode();
+            int statusCode = getReturnStatus();
 
             if (statusCode == invalidDb) {
                 throw new DictConnectionException("Invalid database input");
             } else if (statusCode == noMatch) {
                 return set;
             } else if (statusCode == success) {
-                System.out.println(status.getDetails());
                 String nextDefinition = input.readLine();
                 String [] parsedSummary = DictStringParser.splitAtoms(nextDefinition);
                 while (parsedSummary[0].equals(Integer.toString(definitionStart))) {
@@ -165,9 +154,7 @@ public class DictionaryConnection {
                     Definition def = new Definition(parsedWord, mappedDb);
                     while (!nextLine.equals(".")) {
                         System.out.println("Definition start: " + nextLine);
-                        if (!nextLine.equalsIgnoreCase(word)) {
-                            def.appendDefinition(nextLine);
-                        }
+                        def.appendDefinition(nextLine);
                         nextLine = input.readLine();
                     }
                     set.add(def);
@@ -207,10 +194,9 @@ public class DictionaryConnection {
         int success = 152;
         int terminate = 250;
 
-        // make sure there's actual input
-        if (word.isEmpty() || word.equals("") || word == null) {
-            return set;
-        }
+        // simply return if no word entry
+        if (word.isEmpty()) return set;
+
         try {
             // Send request
             String strategyName = strategy.getName();
@@ -218,8 +204,7 @@ public class DictionaryConnection {
             output.println("MATCH " + databaseName + " " + strategyName + " \"" + word + "\"");
 
             // Check connection status code
-            Status status = Status.readStatus(input);
-            int statusCode = status.getStatusCode();
+            int statusCode = getReturnStatus();
 
             if (statusCode == invalidDb) {
                 throw new DictConnectionException("Invalid database input");
@@ -237,15 +222,12 @@ public class DictionaryConnection {
                     set.add(parsedMatchWord);
                     nextMatch = input.readLine();
                 }
-                Status endStatus = Status.readStatus(input);
-                int endStatusCode = endStatus.getStatusCode();
-
+                // Check validity of terminating status code
+                int endStatusCode = getReturnStatus();
                 if (endStatusCode != terminate) {
                     throw new DictConnectionException("Invalid server end status - Matches");
                 }
-            } else {
-                throw new DictConnectionException("Invalid Code - Matches");
-            }
+            } else throw new DictConnectionException("Invalid Code - Matches");
         } catch (IOException e) {
             throw new DictConnectionException("Network error when finding matches");
         }
@@ -275,8 +257,7 @@ public class DictionaryConnection {
             output.println("SHOW DATABASES");
 
             // Check connection code
-            Status status = Status.readStatus(input);
-            int statusCode = status.getStatusCode();
+            int statusCode = getReturnStatus();
 
             if (statusCode == noMatch) {
                 return databaseMap.values();
@@ -291,10 +272,8 @@ public class DictionaryConnection {
                     databaseMap.put(parsedDatabaseName, new Database(parsedDatabaseName, parsedDatabaseDescription));
                     nextLine = input.readLine();
                 }
-
-                Status endStatus = Status.readStatus(input);
-                int endStatusCode = endStatus.getStatusCode();
-
+                // Check validity of terminating status code
+                int endStatusCode = getReturnStatus();
                 if (endStatusCode != terminate) {
                     throw new DictConnectionException("Invalid server end status - Dictionary");
                 }
@@ -324,9 +303,8 @@ public class DictionaryConnection {
             // Send request for list of strategies
             output.println("SHOW STRAT");
 
-            // Check connection code.
-            Status status = Status.readStatus(input);
-            int statusCode = status.getStatusCode();
+            // Check connection status code
+            int statusCode = getReturnStatus();
 
             System.out.println("Parsed Status:" + statusCode);
             if (statusCode == noMatch) {
@@ -341,19 +319,20 @@ public class DictionaryConnection {
                     set.add(new MatchingStrategy(parsedStrategyName, parsedStrategyDescription));
                     nextLine = input.readLine();
                 }
-
-                Status endStatus = Status.readStatus(input);
-                int endStatusCode = endStatus.getStatusCode();
-                System.out.println("End parsed status: " + endStatusCode);
+                // Check validity of terminating status code
+                int endStatusCode = getReturnStatus();
                 if (endStatusCode != terminate) {
                     throw new DictConnectionException("Invalid server end status - Strat");
                 }
-            }
-            else throw new DictConnectionException("Invalid Code - Strat");
+            } else throw new DictConnectionException("Invalid Code - Strat");
         } catch (IOException e) {
             throw new DictConnectionException("Network error when finding strategies");
         }
         return set;
     }
 
+    private int getReturnStatus() throws DictConnectionException {
+        Status status = Status.readStatus(input);
+        return status.getStatusCode();
+    }
 }

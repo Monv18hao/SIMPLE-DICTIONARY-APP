@@ -63,7 +63,7 @@ public class DictionaryConnection {
             int statusCode = getReturnStatus();
 
             if (statusCode == success) {
-                System.out.print("OK");
+                return;
             } else if (statusCode == tempUnavailable) {
                 throw new DictConnectionException("Server temporarily unavailable");
             } else if (statusCode ==  shutDown) {
@@ -124,11 +124,11 @@ public class DictionaryConnection {
         if (word.isEmpty()) return set;
 
         // Set variables for returned status codes
-        int invalidDb = 550;
         int noMatch = 552;
         int success = 150;
         int definitionStart = 151;
         int terminate = 250;
+        int invalidDb = 550;
 
         try {
             // Send Request for definitions
@@ -138,40 +138,44 @@ public class DictionaryConnection {
             // Check connection status code
             int statusCode = getReturnStatus();
 
-            if (statusCode == invalidDb) {
-                throw new DictConnectionException("Invalid database input");
-            } else if (statusCode == noMatch) {
+            if (statusCode == noMatch) {
                 return set;
             } else if (statusCode == success) {
                 String nextDefinition = input.readLine();
-                String [] parsedSummary = DictStringParser.splitAtoms(nextDefinition);
-                while (parsedSummary[0].equals(Integer.toString(definitionStart))) {
-                    String parsedWord = parsedSummary[1];
-                    String parsedDatabase = parsedSummary[2];
+                String [] splitDefinition = DictStringParser.splitAtoms(nextDefinition);
 
+                //new definition line in form: definitionStart "returnedWord" returnedDb
+                while (splitDefinition[0].equals(Integer.toString(definitionStart))) {
+                    String returnedWord = splitDefinition[1];
+                    String returnedDb = splitDefinition[2];
+
+                    // Create definition object, set definition and add to set
                     String nextLine = input.readLine();
-                    Database mappedDb = databaseMap.get(parsedDatabase);
-                    Definition def = new Definition(parsedWord, mappedDb);
+                    Database mappedDb = databaseMap.get(returnedDb);
+                    Definition def = new Definition(returnedWord, mappedDb);
+
+                    // Append definition together
                     while (!nextLine.equals(".")) {
-                        System.out.println("Definition start: " + nextLine);
                         def.appendDefinition(nextLine);
                         nextLine = input.readLine();
                     }
                     set.add(def);
-                    System.out.println("Definition: " + def.getDefinition());
+
                     nextDefinition = input.readLine();
-                    parsedSummary = DictStringParser.splitAtoms(nextDefinition);
+                    splitDefinition = DictStringParser.splitAtoms(nextDefinition);
                 }
-                if (!parsedSummary[0].equals(Integer.toString(terminate))) {
-                    throw new DictConnectionException("Invalid server end status - Definition");
+                // Check validity of terminating status code
+                // terminating line in the form: terminate ok [details]
+                if (!splitDefinition[0].equals(Integer.toString(terminate))) {
+                    throw new DictConnectionException("Expected termination status for strategy: " + terminate + System.lineSeparator() +
+                            "Received termination status: " + splitDefinition[0]);
                 }
-            } else {
-                throw new DictConnectionException("Invalid Code - Definition");
-            }
+            } else if (statusCode == invalidDb) {
+                throw new DictConnectionException("Invalid database input");
+            } else throw new DictConnectionException("Invalid status code received for definition: " + statusCode);
         } catch(IOException e){
             throw new DictConnectionException("Network error when finding definition");
         }
-
         return set;
     }
 
@@ -188,11 +192,11 @@ public class DictionaryConnection {
     public synchronized Set<String> getMatchList(String word, MatchingStrategy strategy, Database database) throws DictConnectionException {
         Set<String> set = new LinkedHashSet<>();
 
-        int invalidDb = 550;
-        int invalidStrat = 551;
         int noMatch = 552;
         int success = 152;
         int terminate = 250;
+        int invalidDb = 550;
+        int invalidStrat = 551;
 
         // simply return if no word entry
         if (word.isEmpty()) return set;
@@ -206,28 +210,29 @@ public class DictionaryConnection {
             // Check connection status code
             int statusCode = getReturnStatus();
 
-            if (statusCode == invalidDb) {
-                throw new DictConnectionException("Invalid database input");
-            } else if (statusCode == invalidStrat) {
-                throw new DictConnectionException("Invalid strategy input");
-            } else if (statusCode == noMatch) {
+            if (statusCode == noMatch) {
                 return set;
             } else if (statusCode == success) {
+                // parse each returned match, put into set
                 String nextMatch = input.readLine();
                 while (!nextMatch.equals(".")) {
-
-                    // parse line and put into databaseMap
-                    String[] parsedMatch = DictStringParser.splitAtoms(nextMatch);
-                    String parsedMatchWord = parsedMatch[1];
-                    set.add(parsedMatchWord);
+                    // Lines in the form: dictName "matchWord"
+                    String[] splitLine = DictStringParser.splitAtoms(nextMatch);
+                    String matchWord = splitLine[1];
+                    set.add(matchWord);
                     nextMatch = input.readLine();
                 }
                 // Check validity of terminating status code
                 int endStatusCode = getReturnStatus();
                 if (endStatusCode != terminate) {
-                    throw new DictConnectionException("Invalid server end status - Matches");
+                    throw new DictConnectionException("Expected termination status for matches: " + terminate + System.lineSeparator() +
+                            "Received termination status: " + endStatusCode);
                 }
-            } else throw new DictConnectionException("Invalid Code - Matches");
+            } else if (statusCode == invalidDb) {
+                throw new DictConnectionException("Invalid database input");
+            } else if (statusCode == invalidStrat) {
+                throw new DictConnectionException("Invalid strategy input");
+            } else throw new DictConnectionException("Invalid status code received for matches: " + statusCode);
         } catch (IOException e) {
             throw new DictConnectionException("Network error when finding matches");
         }
@@ -261,26 +266,24 @@ public class DictionaryConnection {
 
             if (statusCode == noMatch) {
                 return databaseMap.values();
-            }
-            else if (statusCode == success) {
+            } else if (statusCode == success) {
                 // Parse each returned database, put into databaseMap
                 String nextLine = input.readLine();
                 while (!nextLine.equals(".")) {
-                    String[] parsedDatabase = DictStringParser.splitAtoms(nextLine);
-                    String parsedDatabaseName = parsedDatabase[0];
-                    String parsedDatabaseDescription = parsedDatabase[1];
-                    databaseMap.put(parsedDatabaseName, new Database(parsedDatabaseName, parsedDatabaseDescription));
+                    // Lines in the form: dbname "dbDescription"
+                    String[] splitLine = DictStringParser.splitAtoms(nextLine);
+                    String dbName = splitLine[0];
+                    String dbDescription = splitLine[1];
+                    databaseMap.put(dbName, new Database(dbName, dbDescription));
                     nextLine = input.readLine();
                 }
                 // Check validity of terminating status code
                 int endStatusCode = getReturnStatus();
                 if (endStatusCode != terminate) {
-                    throw new DictConnectionException("Invalid server end status - Dictionary");
+                    throw new DictConnectionException("Expected termination status for dictionary: " + terminate + System.lineSeparator() +
+                            "Received termination status: " + endStatusCode);
                 }
-            }
-            else {
-                throw new DictConnectionException("Invalid Code - Dictionary");
-            }
+            } else throw new DictConnectionException("\"Invalid status code received for dictionary: " + statusCode);
         } catch (IOException e) {
             throw new DictConnectionException("Network error when finding databases");
         }
@@ -306,25 +309,26 @@ public class DictionaryConnection {
             // Check connection status code
             int statusCode = getReturnStatus();
 
-            System.out.println("Parsed Status:" + statusCode);
             if (statusCode == noMatch) {
                 return set;
             } else if (statusCode == success) {
                 // Parse each returned strategy, create MatchingStrategy object, add in set
                 String nextLine = input.readLine();
                 while (!nextLine.equals(".")) {
-                    String[] parsedStrategy = DictStringParser.splitAtoms(nextLine);
-                    String parsedStrategyName = parsedStrategy[0];
-                    String parsedStrategyDescription = parsedStrategy[1];
-                    set.add(new MatchingStrategy(parsedStrategyName, parsedStrategyDescription));
+                    // Lines in the form: stratName "stratDescription"
+                    String[] splitLine = DictStringParser.splitAtoms(nextLine);
+                    String stratName = splitLine[0];
+                    String stratDescription = splitLine[1];
+                    set.add(new MatchingStrategy(stratName, stratDescription));
                     nextLine = input.readLine();
                 }
                 // Check validity of terminating status code
                 int endStatusCode = getReturnStatus();
                 if (endStatusCode != terminate) {
-                    throw new DictConnectionException("Invalid server end status - Strat");
+                    throw new DictConnectionException("Expected termination status for strategy: " + terminate + System.lineSeparator() +
+                            "Received termination status: " + endStatusCode);
                 }
-            } else throw new DictConnectionException("Invalid Code - Strat");
+            } else throw new DictConnectionException("Invalid status code received for strategy: " + statusCode);
         } catch (IOException e) {
             throw new DictConnectionException("Network error when finding strategies");
         }

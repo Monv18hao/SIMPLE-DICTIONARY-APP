@@ -31,8 +31,6 @@ public class Status {
             throw new DictConnectionException("Status code number expected (" + line + ")", ex);
         }
         this.details = components[1];
-        System.out.println("Status code:" + this.statusCode);
-        System.out.println("Details:" + this.details);
     }
 
     public static Status readStatus(BufferedReader input) throws DictConnectionException {

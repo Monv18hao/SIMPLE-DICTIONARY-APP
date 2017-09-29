@@ -111,6 +111,9 @@ public class DictionaryConnection {
         Collection<Definition> set = new ArrayList<>();
         getDatabaseList(); // Ensure the list of databases has been populated
 
+        // Remove blank space from beginning and end of string
+        word = word.trim();
+
         // Simply return if no word entry
         if (word.isEmpty()) return set;
 
@@ -193,6 +196,8 @@ public class DictionaryConnection {
         int invalidDb = 550;
         int invalidStrat = 551;
 
+        // Remove blank space from beginning and end of string
+        word = word.trim();
 
         // Simply return if no word entry
         if (word.isEmpty()) return set;

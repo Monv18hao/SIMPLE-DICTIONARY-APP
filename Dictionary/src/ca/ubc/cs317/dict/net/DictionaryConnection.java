@@ -65,7 +65,7 @@ public class DictionaryConnection {
             }
 
         } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to:" + host + ":" + port);
+            throw new DictConnectionException("Couldn't get I/O for the connection to:" + host + ":" + port);
         }
     }
 

@@ -1,11 +1,11 @@
-Total before late penalty: [/100]
+Total before late penalty: [113/110]
 
 NOTE: in the marking report something left blank (e.g.  [ /6]) typically means
 that you got full marks for that item. 
 
 BONUS FOR WORKING WITH PARTNER [/3]
 
-CLIENT - FUNCTIONALITY: [/80]
+CLIENT - FUNCTIONALITY: [/90]
 
 [/3] Code compiles without warnings
 [/2] Working makefile produces the JAR file
@@ -87,3 +87,5 @@ PROGRAM STRUCTURE AND STYLE: [/20]
 
 
 MARKER'S ADDITIONAL COMMENTS:
+
+Awesome job! Clean code and fulfills all the requirements!
